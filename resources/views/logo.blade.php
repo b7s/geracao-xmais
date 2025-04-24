@@ -1,0 +1,1 @@
+<img src="{{ asset('images/logo-geracao-xmais.png') }}" alt="Logo Geração xmais" class="h-10">
