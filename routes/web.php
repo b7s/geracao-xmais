@@ -14,8 +14,6 @@ use App\Http\Controllers\AssociadoController;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', fn () => redirect()->route('filament.associado.home'));
 
-Route::post('/associados/verificar-unicidade', [AssociadoController::class, 'verificarUnicidade'])->name('associados.verificar-unicidade');
+//Route::post('/associados/verificar-unicidade', [AssociadoController::class, 'verificarUnicidade'])->name('associados.verificar-unicidade');
