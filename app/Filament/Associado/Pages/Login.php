@@ -39,7 +39,7 @@ class Login extends BaseLogin
                     ->required()
                     ->placeholder('Selecione sua data de nascimento')
                     ->displayFormat('d/m/Y')
-                    ->native(false),
+                    ->native(true),
             ]);
     }
 

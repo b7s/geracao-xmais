@@ -62,6 +62,8 @@ php artisan tinker --execute="App\Models\User::find(1)->update(['is_admin' => tr
 
 Acesse o sistema pela URL `/admin` e faça login com as credenciais criadas.
 
+Ao cadastrar os Associados, eles podem acessar pela URL `/associado`, usando o celular e data de nascimento.
+
 ## Validação de Associados
 
 O sistema implementa validação para evitar duplicação de associados com base nos seguintes critérios:
