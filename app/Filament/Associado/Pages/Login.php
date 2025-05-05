@@ -23,6 +23,11 @@ class Login extends BaseLogin
         return false; // Não usaremos o logo padrão, já que definimos nosso próprio no template
     }
     
+    public function getHeading(): string
+    {
+        return '';
+    }
+    
     public function form(Form $form): Form
     {
         return $form

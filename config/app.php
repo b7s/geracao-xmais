@@ -17,6 +17,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'whatsapp_admin' => env('WHATSAPP_ADMIN', '81982723434'), // no formato ddd9999999999 (ddd = 2 digitos)
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

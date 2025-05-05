@@ -80,6 +80,7 @@ class AssociadoResource extends Resource
                                     ->columnSpan(1),
                                 Forms\Components\DatePicker::make('data_nascimento')
                                     ->label('Data de Nascimento')
+                                    ->default('1970-01-01')
                                     ->displayFormat('d/m/Y')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function($state, $old, Set $set, Get $get, Forms\Components\Component $component) {
@@ -126,6 +127,13 @@ class AssociadoResource extends Resource
                     ])
                     ->columns(1),
 
+                Forms\Components\Section::make('Endereço Completo')
+                    ->schema([
+                        Forms\Components\Textarea::make('endereco')
+                            ->hiddenLabel()
+                            ->rows(3),
+                    ]),
+
                 Forms\Components\Section::make('Atividades')
                     ->schema([
                         Forms\Components\Grid::make()
@@ -151,13 +159,6 @@ class AssociadoResource extends Resource
                                     ->label('Faz parte do Grupo do WhatsApp')
                                     ->default(false),
                             ]),
-                    ]),
-
-                Forms\Components\Section::make('Endereço Completo')
-                    ->schema([
-                        Forms\Components\Textarea::make('endereco')
-                            ->hiddenLabel()
-                            ->rows(3),
                     ]),
 
                 Forms\Components\Section::make('Observações')

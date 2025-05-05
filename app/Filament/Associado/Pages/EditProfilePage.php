@@ -144,18 +144,26 @@ class EditProfilePage extends Page
                     ])
                     ->columns(1),
 
+                Section::make('Endereço')
+                        ->schema([
+                            Textarea::make('endereco')
+                                ->label('Endereço Completo')
+                                ->rows(3),
+                        ]),
+
                 Section::make('Atividades')
                     ->schema([
                         Components\Grid::make()
                             ->schema([
                                 Toggle::make('cartao_beneficios')
                                     ->label('Cartão Benefícios')
-                                    ->default(false)
-                                    ->live(),
+                                    ->disabled()
+                                    ->dehydrated(false),
 
                                 Toggle::make('frequenta_eventos')
                                     ->label('Frequenta os Eventos')
-                                    ->default(false),
+                                    ->disabled()
+                                    ->dehydrated(false),
                             ]),
                         Components\Grid::make()
                             ->schema([
@@ -163,19 +171,14 @@ class EditProfilePage extends Page
                                     ->label('Cartão Benefícios Desde')
                                     ->displayFormat('m/Y')
                                     ->format('Y-m')
-                                    ->disabled(fn (Get $get) => !$get('cartao_beneficios')),
+                                    ->disabled()
+                                    ->dehydrated(false),
 
                                 Toggle::make('grupo_whatsapp')
                                     ->label('Faz parte do Grupo do WhatsApp')
-                                    ->default(false),
+                                    ->disabled()
+                                    ->dehydrated(false),
                             ]),
-                    ]),
-
-                Section::make('Endereço')
-                    ->schema([
-                        Textarea::make('endereco')
-                            ->label('Endereço Completo')
-                            ->rows(3),
                     ]),
             ])
             ->statePath('data');
