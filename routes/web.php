@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\AssociadoController;
 
 /*
@@ -15,5 +17,21 @@ use App\Http\Controllers\AssociadoController;
 */
 
 Route::get('/', fn () => redirect()->route('filament.associado.home'));
+
+Route::get('/logout2', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/');
+})->name('get.logout');
+
+Route::get('/clear-cache', function() {
+    Artisan::call('cache:clear');
+    Artisan::call('config:clear');
+    Artisan::call('route:clear');
+    Artisan::call('view:clear');
+    Artisan::call('optimize:clear');
+    return "Cache cleared successfully";
+})->name('clear.cache');
 
 //Route::post('/associados/verificar-unicidade', [AssociadoController::class, 'verificarUnicidade'])->name('associados.verificar-unicidade');
