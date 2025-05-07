@@ -18,6 +18,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\ViewField;
 
 class EditProfilePage extends Page
 {
@@ -77,7 +78,7 @@ class EditProfilePage extends Page
                         Components\Grid::make()
                             ->schema([
                                 TextInput::make('celular')
-                                    ->label('Celular')
+                                    ->label('Celular/Whatsapp')
                                     ->tel()
                                     ->required()
                                     ->maxLength(20)
@@ -126,21 +127,17 @@ class EditProfilePage extends Page
                             ]),
                         Components\Grid::make()
                             ->schema([
-                                TextInput::make('whatsapp')
-                                    ->label('WhatsApp')
-                                    ->tel()
-                                    ->mask('(99) 99999-9999')
-                                    ->maxLength(255),
                                 TextInput::make('email')
                                     ->label('E-mail')
                                     ->email()
                                     ->maxLength(255)
                                     ->unique(table: 'associados', column: 'email', ignorable: auth('associado')->user()),
+
+                                TextInput::make('instagram')
+                                    ->label('Instagram')
+                                    ->prefix('@')
+                                    ->maxLength(255),
                             ]),
-                        TextInput::make('instagram')
-                            ->label('Instagram')
-                            ->prefix('@')
-                            ->maxLength(255),
                     ])
                     ->columns(1),
 
@@ -153,31 +150,10 @@ class EditProfilePage extends Page
 
                 Section::make('Atividades')
                     ->schema([
-                        Components\Grid::make()
-                            ->schema([
-                                Toggle::make('cartao_beneficios')
-                                    ->label('Cartão Benefícios')
-                                    ->disabled()
-                                    ->dehydrated(false),
-
-                                Toggle::make('frequenta_eventos')
-                                    ->label('Frequenta os Eventos')
-                                    ->disabled()
-                                    ->dehydrated(false),
-                            ]),
-                        Components\Grid::make()
-                            ->schema([
-                                DatePicker::make('cartao_beneficios_desde')
-                                    ->label('Cartão Benefícios Desde')
-                                    ->displayFormat('m/Y')
-                                    ->format('Y-m')
-                                    ->disabled()
-                                    ->dehydrated(false),
-
-                                Toggle::make('grupo_whatsapp')
-                                    ->label('Faz parte do Grupo do WhatsApp')
-                                    ->disabled()
-                                    ->dehydrated(false),
+                        ViewField::make('atividades')
+                            ->view('filament.associado.components.atividades-view')
+                            ->viewData([
+                                'record' => auth('associado')->user(),
                             ]),
                     ]),
             ])

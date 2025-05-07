@@ -33,6 +33,7 @@ class Associado extends Authenticatable implements HasName
         'cartao_beneficios_desde',
         'data_nascimento',
         'endereco',
+        'membro_desde',
     ];
 
     /**
@@ -46,6 +47,7 @@ class Associado extends Authenticatable implements HasName
         'grupo_whatsapp' => 'boolean',
         'cartao_beneficios' => 'boolean',
         'cartao_beneficios_desde' => 'date',
+        'membro_desde' => 'date',
     ];
 
     /**
@@ -57,14 +59,12 @@ class Associado extends Authenticatable implements HasName
     }
 
     /**
-     * Verificar autenticação por telefone e data de nascimento
+     * Verificar autenticação por telefone e email
      */
-    public static function autenticarPorTelefoneEDataNascimento(string $telefone, string $data_nascimento): ?self
+    public static function autenticarPorTelefoneEEmail(string $telefone, string $email): ?self
     {
-        $data = Carbon::createFromFormat('d/m/Y', $data_nascimento)->startOfDay();
-
         return self::where('celular', $telefone)
-            ->whereDate('data_nascimento', $data)
+            ->where('email', $email)
             ->first();
     }
 

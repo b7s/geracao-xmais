@@ -89,6 +89,14 @@ class ImportarAssociados implements ShouldQueue
                                     }
                                 }
                                 
+                                if ($header === 'MEMBRO DESDE (DATA)' && !empty($value)) {
+                                    try {
+                                        $value = Carbon::createFromFormat('d/m/Y', $value)->format('Y-m-d');
+                                    } catch (\Exception $e) {
+                                        $value = null;
+                                    }
+                                }
+                                
                                 // Mapeamento de cabeçalhos para campos do modelo
                                 $fieldMap = [
                                     'Nº' => 'id',
@@ -103,10 +111,22 @@ class ImportarAssociados implements ShouldQueue
                                     'CARTÃO BENEFÍCIOS' => 'cartao_beneficios',
                                     'DESDE (MÊS/ANO)' => 'cartao_beneficios_desde',
                                     'DATA/NASCIMENTO' => 'data_nascimento',
+                                    'MEMBRO DESDE (DATA)' => 'membro_desde',
                                     // Removendo 'ENDEREÇO' do mapeamento para evitar o erro
                                 ];
-                                
+
                                 $field = $fieldMap[$header] ?? strtolower(str_replace(' ', '_', $header));
+
+                                // Limpa o celular (remove tudo exceto números)
+                                if ($field === 'celular' && !empty($value)) {
+                                    $value = preg_replace('/[^0-9]/', '', $value);
+                                }
+
+                                // Limpa o email (apenas trim já que o trim inicial pode não ser suficiente)
+                                if ($field === 'email' && !empty($value)) {
+                                    $value = trim($value);
+                                }
+
                                 $data[$field] = $value;
                             }
                         }

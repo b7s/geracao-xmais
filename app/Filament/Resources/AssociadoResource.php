@@ -50,7 +50,7 @@ class AssociadoResource extends Resource
                         Forms\Components\Grid::make()
                             ->schema([
                                 Forms\Components\TextInput::make('celular')
-                                    ->label('Celular')
+                                    ->label('Celular/Whatsapp')
                                     ->tel()
                                     ->maxLength(20)
                                     ->required()
@@ -108,22 +108,18 @@ class AssociadoResource extends Resource
                                     ->columnSpan(1),
                             ]),
                         Forms\Components\Grid::make()
-                            ->schema([
-                                Forms\Components\TextInput::make('whatsapp')
-                                    ->label('WhatsApp')
-                                    ->tel()
-                                    ->mask('(99) 99999-9999')
+                            ->schema([                                
+                                Forms\Components\TextInput::make('instagram')
+                                    ->label('Instagram')
+                                    ->prefix('@')
                                     ->maxLength(255),
+
                                 Forms\Components\TextInput::make('email')
                                     ->label('E-mail')
                                     ->email()
                                     ->maxLength(255)
                                     ->unique(ignoreRecord: true),
                             ]),
-                        Forms\Components\TextInput::make('instagram')
-                            ->label('Instagram')
-                            ->prefix('@')
-                            ->maxLength(255),
                     ])
                     ->columns(1),
 
@@ -158,6 +154,13 @@ class AssociadoResource extends Resource
                                 Forms\Components\Toggle::make('grupo_whatsapp')
                                     ->label('Faz parte do Grupo do WhatsApp')
                                     ->default(false),
+                            ]),
+                        Forms\Components\Grid::make()
+                            ->schema([
+                                Forms\Components\DatePicker::make('membro_desde')
+                                    ->label('Membro Desde')
+                                    ->displayFormat('d/m/Y')
+                                    ->default(now()),
                             ]),
                     ]),
 
@@ -230,6 +233,20 @@ class AssociadoResource extends Resource
                 Tables\Columns\IconColumn::make('cartao_beneficios')
                     ->label('Cartão Benefícios')
                     ->boolean(),
+
+                Tables\Columns\IconColumn::make('cadastro_completo')
+                    ->label('Cadastro Completo')
+                    ->boolean()
+                    ->getStateUsing(function (Associado $record): bool {
+                        return !empty($record->email) && 
+                               !empty($record->celular) && 
+                               !empty($record->data_nascimento);
+                    })
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-exclamation-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Criado em')
                     ->dateTime('d/m/Y H:i')
@@ -260,6 +277,25 @@ class AssociadoResource extends Resource
                         '1' => 'Sim',
                         '0' => 'Não',
                     ]),
+                Tables\Filters\TernaryFilter::make('cadastro_incompleto')
+                    ->label('Cadastro Incompleto')
+                    ->placeholder('Todos os registros')
+                    ->trueLabel('Somente incompletos')
+                    ->falseLabel('Somente completos')
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->where(function (Builder $query): Builder {
+                            return $query->whereNull('email')
+                                ->orWhere('email', '')
+                                ->orWhereNull('celular')
+                                ->orWhere('celular', '')
+                                ->orWhereNull('data_nascimento');
+                        }),
+                        false: fn (Builder $query): Builder => $query->whereNotNull('email')
+                            ->where('email', '!=', '')
+                            ->whereNotNull('celular')
+                            ->where('celular', '!=', '')
+                            ->whereNotNull('data_nascimento'),
+                    ),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

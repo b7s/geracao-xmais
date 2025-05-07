@@ -139,7 +139,7 @@
 
                     <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
                         <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Membro desde</div>
-                        <div class="mt-1 text-gray-900 dark:text-gray-100">{{ $auth->created_at->format('d/m/Y') }}</div>
+                        <div class="mt-1 text-gray-900 dark:text-gray-100">{{ $auth->membro_desde ? $auth->membro_desde->format('d/m/Y') : $auth->created_at->format('d/m/Y') }}</div>
                     </div>
                 </div>
             </div>

@@ -3,13 +3,12 @@
 namespace App\Filament\Associado\Pages;
 
 use App\Models\Associado;
-use Carbon\Carbon;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 use Filament\Pages\Auth\Login as BaseLogin;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 class Login extends BaseLogin
@@ -17,6 +16,16 @@ class Login extends BaseLogin
     protected static string $view = 'filament.pages.login-associado';
     
     protected static bool $shouldRegisterNavigation = false;
+    
+    /**
+     * Maximum login attempts allowed.
+     */
+    public int $maxAttempts = 3;
+
+    /**
+     * Minutes to lockout login attempts.
+     */
+    public int $decayMinutes = 1;
     
     public function hasLogo(): bool
     {
@@ -37,14 +46,14 @@ class Login extends BaseLogin
                     ->required()
                     ->placeholder('Digite seu celular')
                     ->tel()
-                    ->helperText('Digite apenas números. Ex: 11999998888'),
+                    ->helperText('Digite apenas números. Ex: 81999998888'),
                 
-                DatePicker::make('data_nascimento')
-                    ->label('Data de Nascimento')
+                TextInput::make('email')
+                    ->label('Email')
                     ->required()
-                    ->placeholder('Selecione sua data de nascimento')
-                    ->displayFormat('d/m/Y')
-                    ->native(true),
+                    ->placeholder('Digite seu email')
+                    ->email()
+                    ->autocomplete(),
             ]);
     }
 
@@ -55,29 +64,85 @@ class Login extends BaseLogin
     {
         return [
             'celular' => $data['celular'],
-            'data_nascimento' => $data['data_nascimento'],
+            'email' => $data['email'],
         ];
+    }
+
+    /**
+     * Get the throttle key for the given request.
+     */
+    protected function throttleKey(array $data): string
+    {
+        return strtolower($data['celular'] . '|' . $data['email'] . '|' . request()->ip());
+    }
+
+    /**
+     * Check if the user has too many failed login attempts.
+     */
+    protected function hasTooManyLoginAttempts(array $data): bool
+    {
+        return RateLimiter::tooManyAttempts(
+            $this->throttleKey($data),
+            $this->maxAttempts
+        );
+    }
+
+    /**
+     * Increment the login attempts for the user.
+     */
+    protected function incrementLoginAttempts(array $data): void
+    {
+        RateLimiter::hit(
+            $this->throttleKey($data),
+            $this->decayMinutes * 60
+        );
+    }
+
+    /**
+     * Get the number of seconds until the next login attempt is available.
+     */
+    protected function availableIn(array $data): int
+    {
+        return RateLimiter::availableIn(
+            $this->throttleKey($data)
+        );
     }
 
     public function authenticate(): LoginResponse
     {
         $data = $this->form->getState();
         
-        $celular = $data['celular'];
-        $dataNascimento = $data['data_nascimento'];
-
-        $dataNascimentoFormatada = Carbon::parse($dataNascimento)->startOfDay();
+        // Check for too many login attempts
+        if ($this->hasTooManyLoginAttempts($data)) {
+            $seconds = $this->availableIn($data);
+            
+            throw ValidationException::withMessages([
+                'data.celular' => __('Muitas tentativas de login. Por favor, tente novamente em :seconds segundos.', ['seconds' => ceil($seconds / 60)]),
+            ]);
+        }
+        
+        // Limpa os dados de entrada
+        $celular = preg_replace('/[^0-9]/', '', $data['celular']);
+        $email = trim($data['email']);
 
         $associado = Associado::query()
-            ->where('celular', $celular)
-            ->whereDate('data_nascimento', $dataNascimentoFormatada)
+            ->where([
+                'celular' => $celular,
+                'email' => $email,
+            ])
             ->first();
 
         if (!$associado) {
+            // Increment login attempts
+            $this->incrementLoginAttempts($data);
+            
             throw ValidationException::withMessages([
                 'data.celular' => 'As credenciais fornecidas não correspondem aos nossos registros.',
             ]);
         }
+
+        // Login successful, clear the rate limiter
+        RateLimiter::clear($this->throttleKey($data));
 
         Auth::guard('associado')->login($associado);
         

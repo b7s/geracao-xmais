@@ -16,19 +16,43 @@ class CreateAssociado extends CreateRecord
     {
         $data = $this->form->getState();
         
-        // Verifica se já existe um associado com este celular e data de nascimento
-        $existe = Associado::where('celular', $data['celular'])
-            ->where('data_nascimento', $data['data_nascimento'])
-            ->exists();
+        // Limpa os dados
+        if (isset($data['celular'])) {
+            $data['celular'] = preg_replace('/[^0-9]/', '', $data['celular']);
+            $this->form->fill(['celular' => $data['celular']]);
+        }
+        
+        if (isset($data['email'])) {
+            $data['email'] = trim($data['email']);
+            $this->form->fill(['email' => $data['email']]);
+        }
+        
+        // Verifica se já existe um associado com este celular
+        $existeCelular = Associado::query()->where('celular', $data['celular'])->exists();
             
-        if ($existe) {
+        if ($existeCelular) {
             Notification::make()
-                ->title('Associado duplicado')
-                ->body('Já existe um associado com este celular e data de nascimento.')
+                ->title('Celular já cadastrado')
+                ->body('Já existe um associado com este número de celular.')
                 ->danger()
                 ->send();
                 
             $this->halt();
+        }
+        
+        // Verifica se já existe um associado com este email (caso o email esteja presente no formulário)
+        if (isset($data['email']) && !empty($data['email'])) {
+            $existeEmail = Associado::query()->where('email', $data['email'])->exists();
+
+            if ($existeEmail) {
+                Notification::make()
+                    ->title('Email já cadastrado')
+                    ->body('Já existe um associado com este endereço de email.')
+                    ->danger()
+                    ->send();
+                    
+                $this->halt();
+            }
         }
     }
 }

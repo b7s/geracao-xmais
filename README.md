@@ -93,3 +93,23 @@ O acesso ao painel administrativo é restrito a usuários com a flag `is_admin` 
 ## Licença
 
 Este software é licenciado sob a [Licença MIT](https://opensource.org/licenses/MIT).
+
+## Coluna membro_desde
+
+A coluna `membro_desde` foi adicionada à tabela `associados` para registrar a data de associação do membro. Esta data pode ser diferente da data de criação do registro no sistema (`created_at`).
+
+### Uso:
+
+- Quando um novo associado é cadastrado, o campo `membro_desde` é preenchido automaticamente com a data atual, mas pode ser editado manualmente.
+- Para associados importados via CSV, existe uma coluna `MEMBRO DESDE (DATA)` no formato `dd/mm/yyyy`.
+- Na visualização do perfil do associado, é exibida a data de `membro_desde` ou, caso esteja vazia, a data de `created_at`.
+
+### Comandos:
+
+Para atualizar registros existentes que não possuem a coluna `membro_desde` preenchida, foi criado o comando:
+
+```
+php artisan associados:update-membros-desde
+```
+
+Este comando define `membro_desde` igual a `created_at` para todos os registros onde `membro_desde` é nulo.

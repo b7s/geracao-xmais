@@ -6,7 +6,7 @@
         </div>
 
         <p class="mt-2 text-center text-gray-500 dark:text-gray-400">
-            Digite seu celular e data de nascimento para acessar
+            Digite seu celular e email para acessar
         </p>
 
         <form wire:submit="authenticate" class="space-y-4">
@@ -16,8 +16,16 @@
                 type="submit"
                 class="w-full"
                 color="success"
+                wire:loading.attr="disabled"
+                wire:loading.class="opacity-70 cursor-wait"
             >
-                Entrar
+                <span wire:loading.remove>
+                    Entrar
+                </span>
+                
+                <div wire:loading wire:target="authenticate" class="inline-flex items-center justify-center gap-x-2">
+                    <x-filament::loading-indicator class="h-4 w-4" />
+                </div>
             </x-filament::button>
         </form>
 
