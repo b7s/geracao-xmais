@@ -23,9 +23,9 @@ Route::get('/logout2', function () {
     request()->session()->invalidate();
     request()->session()->regenerateToken();
     return redirect('/');
-})->name('get.logout');
+})->name('logout2');
 
-Route::get('/clear-cache', function() {
+Route::get('/clear-cache-geral', function() {
     Artisan::call('cache:clear');
     Artisan::call('config:clear');
     Artisan::call('route:clear');
