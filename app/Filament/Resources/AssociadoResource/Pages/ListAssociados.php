@@ -89,8 +89,6 @@ class ListAssociados extends ListRecords
                                 ->formatStateUsing(fn ($state) => $state ? Carbon::parse($state)->format('m/Y') : ''),
                             \pxlrbt\FilamentExcel\Columns\Column::make('email')
                                 ->heading('E-mail'),
-                            \pxlrbt\FilamentExcel\Columns\Column::make('whatsapp')
-                                ->heading('WhatsApp'),
                             \pxlrbt\FilamentExcel\Columns\Column::make('instagram')
                                 ->heading('Instagram'),
                             \pxlrbt\FilamentExcel\Columns\Column::make('frequenta_eventos')
@@ -231,12 +229,70 @@ class ListAssociados extends ListRecords
             // Formatar dados
             $celular = preg_replace('/\D/', '', $row['CELULAR Whatsapp'] ?? '');
             
-            $dataNascimento = '1970-01-01';
+            $dataNascimento = '1899-01-01';
             if (!empty($row['DATA/NASCIMENTO'])) {
                 try {
-                    $dataNascimento = \Carbon\Carbon::createFromFormat('d/m/Y', $row['DATA/NASCIMENTO'])->format('Y-m-d');
+                    $dateFormats = [
+                        'd/m/Y',    // 31/12/2023
+                        'd/m/y',    // 31/12/23
+                        'd-m-Y',    // 31-12-2023
+                        'd-m-y',    // 31-12-23
+                        'Y-m-d',    // 2023-12-31
+                        'y-m-d',    // 23-12-31
+                        'd.m.Y',    // 31.12.2023
+                        'd.m.y',    // 31.12.23
+                        'm/d/Y',    // 12/31/2023
+                        'm/d/y',    // 12/31/23
+                        'Y/m/d',    // 2023/12/31
+                        'y/m/d',    // 23/12/31
+                    ];
+
+                    $dateString = trim($row['DATA/NASCIMENTO']);
+                    $dataNascimento = null;
+
+                    foreach ($dateFormats as $format) {
+                        try {
+                            $parsedDate = Carbon::createFromFormat($format, $dateString);
+                            
+                            // If the date is in the future or less than 15 years ago, subtract 100 years
+                            if ($parsedDate->isFuture() || $parsedDate->diffInYears(now()) < 15) {
+                                $parsedDate = $parsedDate->subYears(100);
+                            }
+
+                            if ($parsedDate && $parsedDate->year > 1900) {
+                                $dataNascimento = $parsedDate->format('Y-m-d');
+                                break;
+                            }
+                        } catch (\Exception $e) {
+                            continue;
+                        }
+                    }
+
+                    // If no format matched, try Carbon's parse method as a fallback
+                    if (!$dataNascimento) {
+                        try {
+                            $parsedDate = Carbon::parse($dateString);
+                            
+                            // If the date is in the future or less than 15 years ago, subtract 100 years
+                            if ($parsedDate->isFuture() || $parsedDate->diffInYears(now()) < 15) {
+                                $parsedDate = $parsedDate->subYears(100);
+                            }
+                            
+                            if ($parsedDate && $parsedDate->year > 1900) {
+                                $dataNascimento = $parsedDate->format('Y-m-d');
+                            }
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to parse date with Carbon::parse: ' . ($dateString ?? 'empty'), [
+                                'error' => $e->getMessage(),
+                                'row' => $row
+                            ]);
+                        }
+                    }
                 } catch (\Exception $e) {
-                    // Ignorar erro de formato - deixar como null
+                    Log::warning('Failed to parse date: ' . ($row['DATA/NASCIMENTO'] ?? 'empty'), [
+                        'error' => $e->getMessage(),
+                        'row' => $row
+                    ]);
                 }
             }
             
@@ -261,9 +317,9 @@ class ListAssociados extends ListRecords
                     'endereco' => $row['ENDEREÇO'] ?? null,
                 ];
 
-                if (!empty($row['DESDE (MÊS/ANO)'])) {
+                if (!empty($row['MEMBRO DESDE (DATA)'])) {
                     try {
-                        $data['cartao_beneficios_desde'] = \Carbon\Carbon::createFromFormat('m/Y', $row['DESDE (MÊS/ANO)'])->format('Y-m-d');
+                        $data['cartao_beneficios_desde'] = \Carbon\Carbon::createFromFormat('m/Y', $row['MEMBRO DESDE (DATA)'])->format('Y-m-d');
                     } catch (\Exception $e) {
                         // Ignorar erro de formato
                     }
