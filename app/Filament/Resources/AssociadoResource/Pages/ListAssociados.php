@@ -36,6 +36,36 @@ class ListAssociados extends ListRecords
         ];
     }
 
+    protected function detectCsvSeparator(string $path): string
+    {
+        $handle = fopen($path, 'r');
+        $semicolonCount = 0;
+        $commaCount = 0;
+        $lineCount = 0;
+        $maxLines = 50;
+
+        while (($line = fgets($handle)) !== false && $lineCount < $maxLines) {
+            // Skip empty lines
+            if (trim($line) === '') {
+                continue;
+            }
+
+            $semicolonCount += substr_count($line, ';');
+            $commaCount += substr_count($line, ',');
+            $lineCount++;
+        }
+
+        fclose($handle);
+
+        // If no separators found, default to semicolon
+        if ($semicolonCount === 0 && $commaCount === 0) {
+            return ';';
+        }
+
+        // Return the separator with more occurrences, defaulting to semicolon if equal
+        return $semicolonCount >= $commaCount ? ';' : ',';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -88,21 +118,25 @@ class ListAssociados extends ListRecords
                         ->label('Arquivo CSV')
                         ->acceptedFileTypes(['text/csv', 'application/vnd.ms-excel'])
                         ->required(),
-                    \Filament\Forms\Components\Section::make('Modelo de Importação')
-                        ->description('Baixe o modelo CSV para preencher com os dados dos associados.')
+                    \Filament\Forms\Components\Fieldset::make('Modelo de Importação')
                         ->schema([
+                            \Filament\Forms\Components\Placeholder::make('')
+                                ->content(fn () => 'Baixe o modelo CSV para preencher com os dados dos associados.')
+                                ->columnSpanFull(),
+
                             \Filament\Forms\Components\View::make('filament.components.download-model-button')
                                 ->viewData([
                                     'url' => asset('modelos/modelo-importacao-associados.csv'),
                                     'label' => 'Baixar modelo CSV',
                                 ]),
-                        ])
-                        ->collapsed()
-                        ->collapsible(),
+                        ]),
                 ])
                 ->action(function (array $data) {
                     $file = $data['csvFile'];
                     $path = storage_path('app/public/' . $file);
+                    
+                    // Detect the CSV separator
+                    $separator = $this->detectCsvSeparator($path);
                     
                     // Configuração para importação em chunks
                     $chunkSize = 100; // Processa 100 registros por vez
@@ -123,7 +157,7 @@ class ListAssociados extends ListRecords
                     $handle = fopen($path, 'r');
                     
                     // Pular a linha de cabeçalho
-                    $headers = fgetcsv($handle, 0, ';');
+                    $headers = fgetcsv($handle, 0, $separator);
                     
                     $totalRows = 0;
                     $importedRows = 0;
@@ -132,7 +166,13 @@ class ListAssociados extends ListRecords
                     
                     $chunks = collect();
                     
-                    while (($data = fgetcsv($handle, 0, ';')) !== false) {
+                    while (($data = fgetcsv($handle, 0, $separator)) !== false) {
+                        // Skip if the number of columns doesn't match headers
+                        if (count($headers) !== count($data)) {
+                            $ignoredRows++;
+                            continue;
+                        }
+
                         $row = array_combine($headers, $data);
                         $chunks->push($row);
                         
@@ -157,12 +197,18 @@ class ListAssociados extends ListRecords
                     
                     fclose($handle);
                     
+                    try {
+                        unlink($path);
+                    } catch (\Exception $e) {
+                        // Ignorar erro
+                    }
+
                     Notification::make()
                         ->success()
                         ->title('Importação concluída')
                         ->icon('heroicon-o-check-circle')
                         ->duration(25000)
-                        ->body("Total processado: $totalRows registros. Criados: $importedRows. Atualizados: $updatedRows. Ignorados (tel ou data de nascimento vazio): $ignoredRows.")
+                        ->body("Total processado: $totalRows registros. Criados: $importedRows. Atualizados: $updatedRows. Ignorados: $ignoredRows (celular ou data de nascimento vazio ou número de colunas inválido)")
                         ->send();
 
                     $this->dispatch('refresh');
@@ -185,7 +231,7 @@ class ListAssociados extends ListRecords
             // Formatar dados
             $celular = preg_replace('/\D/', '', $row['CELULAR Whatsapp'] ?? '');
             
-            $dataNascimento = null;
+            $dataNascimento = '1970-01-01';
             if (!empty($row['DATA/NASCIMENTO'])) {
                 try {
                     $dataNascimento = \Carbon\Carbon::createFromFormat('d/m/Y', $row['DATA/NASCIMENTO'])->format('Y-m-d');
@@ -204,7 +250,7 @@ class ListAssociados extends ListRecords
                     'nome' => $row['NOME'] ?? '',
                     'sobrenome' => $row['SOBRENOME'] ?? '',
                     'celular' => $celular,
-                    'whatsapp' => $row['Whatsapp'] ?? null,
+                    'whatsapp' => $celular,
                     'email' => $row['E-mail'] ?? null,
                     'observacoes' => $row['OBSERVAÇÕES'] ?? null,
                     'frequenta_eventos' => ($row['FREQUENTA OS EVENTOS'] ?? '') === '1',
