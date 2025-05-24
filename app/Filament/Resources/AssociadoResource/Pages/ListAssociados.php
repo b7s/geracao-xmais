@@ -229,7 +229,7 @@ class ListAssociados extends ListRecords
             // Formatar dados
             $celular = preg_replace('/\D/', '', $row['CELULAR Whatsapp'] ?? '');
             
-            $dataNascimento = '1899-01-01';
+            $dataNascimento = config('app.default_birth_for_empty');
             if (!empty($row['DATA/NASCIMENTO'])) {
                 try {
                     $dateFormats = [

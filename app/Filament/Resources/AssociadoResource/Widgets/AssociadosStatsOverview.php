@@ -13,16 +13,17 @@ class AssociadosStatsOverview extends BaseWidget
 {
     protected function getStats(): array
     {
-        [$totalAssociados, $associadosComCartao, $associadosNoGrupo, $duplicados] = Cache::remember('stats.associados', 300, function () {
+        [$totalAssociados, $associadosComCartao, $associadosNoGrupo, $incompletos] = Cache::remember('stats.associados', 300, function () {
             return [
                 Associado::count(),
                 Associado::where('cartao_beneficios', true)->count(),
                 Associado::where('grupo_whatsapp', true)->count(),
-                DB::table('associados')
-                ->select('celular', 'data_nascimento', DB::raw('COUNT(*) as total'))
-                ->groupBy('celular', 'data_nascimento')
-                ->having('total', '>', 1)
-                ->count()
+                Associado::where(function ($query) {
+                    $query->whereNull('data_nascimento')
+                        ->orWhereDate('data_nascimento', config('app.default_birth_for_empty'))
+                        ->orWhereNull('email')
+                        ->orWhereNull('celular');
+                })->count()
             ];
         });
 
@@ -42,8 +43,8 @@ class AssociadosStatsOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-chat-bubble-left-right')
                 ->chart([2, 4, 6, 8, 10, 12, $associadosNoGrupo])
                 ->color('primary'),
-            Stat::make('Possíveis Duplicados', $duplicados)
-                ->description('Mesmos celular e data de nascimento')
+            Stat::make('Cadastros Incompletos', $incompletos)
+                ->description('Faltam dados essenciais (email, celular ou data de nascimento)')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color('danger'),
         ];

@@ -288,7 +288,8 @@ class AssociadoResource extends Resource
                                 ->orWhere('email', '')
                                 ->orWhereNull('celular')
                                 ->orWhere('celular', '')
-                                ->orWhereNull('data_nascimento');
+                                ->orWhereNull('data_nascimento')
+                                ->orWhereDate('data_nascimento', config('app.default_birth_for_empty'));
                         }),
                         false: fn (Builder $query): Builder => $query->whereNotNull('email')
                             ->where('email', '!=', '')

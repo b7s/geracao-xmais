@@ -19,6 +19,8 @@ return [
 
     'whatsapp_admin' => env('WHATSAPP_ADMIN', '81982723434'), // no formato ddd9999999999 (ddd = 2 digitos)
 
+    'default_birth_for_empty' => '1899-01-01',
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment
